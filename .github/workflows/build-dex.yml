@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ Checkout do código
+    # 1️⃣ Pegar o código do repositório
     - name: Checkout repo
       uses: actions/checkout@v3
 
@@ -28,20 +28,22 @@ jobs:
         find . -name "*.java" > sources.txt
         javac -source 1.8 -target 1.8 -d bin @sources.txt
 
-    # 4️⃣ Instalar Android Build Tools (inclui d8 executável)
-    - name: Set up Android Build Tools
-      uses: r0adkll/setup-android@v2
-      with:
-        api-level: 33
-        build-tools: 33.0.2
+    # 4️⃣ Baixar e extrair Android build-tools (inclui d8 nativo)
+    - name: Download Android build-tools
+      run: |
+        mkdir -p android-sdk
+        wget https://dl.google.com/android/repository/build-tools_r33.0.2-linux.zip -O android-build-tools.zip
+        unzip -q android-build-tools.zip -d android-sdk
+        rm android-build-tools.zip
+        chmod +x android-sdk/33.0.2/d8
 
     # 5️⃣ Converter .class para .dex usando d8 nativo
     - name: Convert classes to DEX
       run: |
         mkdir -p dex_output
-        d8 --min-api 21 --output=dex_output bin/**/*.class
+        ./android-sdk/33.0.2/d8 --min-api 21 --output=dex_output bin/**/*.class
 
-    # 6️⃣ Upload do classes.dex
+    # 6️⃣ Upload do classes.dex como artefato
     - name: Upload classes.dex
       uses: actions/upload-artifact@v4
       with:
