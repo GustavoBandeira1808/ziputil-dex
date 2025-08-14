@@ -30,15 +30,26 @@ jobs:
         run: |
           mkdir -p bin
           find . -name "*.java" > sources.txt
-          javac -source 1.8 -target 1.8 -d bin @sources.txt
+          javac -source 1.8 -target 1.8 -d bin @sources.txt || exit 1
 
-      # 5️⃣ Converter diretório bin inteiro para .dex usando d8
+      # 5️⃣ Verificar se o bin contém arquivos .class
+      - name: Verify compilation
+        run: |
+          if [ -z "$(find bin -name '*.class')" ]; then
+            echo "Nenhum arquivo .class encontrado! Compilação falhou."
+            exit 1
+          else
+            echo "Arquivos .class compilados:"
+            find bin -name '*.class'
+          fi
+
+      # 6️⃣ Converter diretório bin inteiro para .dex usando d8
       - name: Convert classes to DEX
         run: |
           mkdir -p dex_output
           ./tools/d8 --min-api 21 --output=dex_output bin
 
-      # 6️⃣ Upload do classes.dex como artefato
+      # 7️⃣ Upload do classes.dex como artefato
       - name: Upload classes.dex
         uses: actions/upload-artifact@v4
         with:
