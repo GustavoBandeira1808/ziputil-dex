@@ -1,4 +1,4 @@
-name: Build ZipUtil.java to DEX
+name: Build all Java to DEX
 
 on:
   push:
@@ -21,36 +21,29 @@ jobs:
         java-version: '8'
         distribution: 'temurin'
 
-    # 3️⃣ Compilar o Java
-    - name: Compile ZipUtil.java
-      run: javac -source 1.8 -target 1.8 ZipUtil.java
-
-    # 4️⃣ Instalar Android SDK e Build Tools (para d8)
-    - name: Install Android SDK and Build Tools
+    # 3️⃣ Compilar todos os arquivos .java
+    - name: Compile all Java files
       run: |
-        sudo apt update
-        sudo apt install -y wget unzip
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        cd $HOME/android-sdk/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip -q cmdline-tools.zip
-        rm cmdline-tools.zip
-        mkdir -p latest
-        mv cmdline-tools/* latest/
-        yes | latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "build-tools;33.0.2"
-        export PATH=$HOME/android-sdk/build-tools/33.0.2:$PATH
-        d8 --version
+        mkdir -p bin
+        find . -name "*.java" > sources.txt
+        javac -source 1.8 -target 1.8 -d bin @sources.txt
 
-    # 5️⃣ Converter .class para .dex
-    - name: Convert class to DEX
+    # 4️⃣ Configurar Android SDK e build-tools
+    - name: Set up Android SDK
+      uses: android/setup-sdk@v2
+      with:
+        api-level: 33
+        build-tools: 33.0.2
+
+    # 5️⃣ Converter todos os .class para .dex
+    - name: Convert classes to DEX
       run: |
-        export PATH=$HOME/android-sdk/build-tools/33.0.2:$PATH
         mkdir -p dex_output
-        d8 --min-api 21 --output=dex_output ZipUtil.class
+        d8 --min-api 21 --output=dex_output bin/**/*.class
 
     # 6️⃣ Upload do .dex como artefato
     - name: Upload classes.dex
       uses: actions/upload-artifact@v4
       with:
-        name: ziputil-dex
+        name: dex-files
         path: ./dex_output/classes.dex
