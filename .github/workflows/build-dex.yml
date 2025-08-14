@@ -10,26 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1️⃣ Checkout do código
     - name: Checkout repo
       uses: actions/checkout@v3
 
+    # 2️⃣ Instalar Java 8
     - name: Set up Java 8
       uses: actions/setup-java@v3
       with:
         java-version: '8'
         distribution: 'temurin'
 
+    # 3️⃣ Compilar todos os arquivos .java
     - name: Compile all Java files
       run: |
         mkdir -p bin
         find . -name "*.java" > sources.txt
         javac -source 1.8 -target 1.8 -d bin @sources.txt
 
-    - name: Convert classes to DEX using d8.jar
+    # 4️⃣ Instalar Android Build Tools (inclui d8 executável)
+    - name: Set up Android Build Tools
+      uses: r0adkll/setup-android@v2
+      with:
+        api-level: 33
+        build-tools: 33.0.2
+
+    # 5️⃣ Converter .class para .dex usando d8 nativo
+    - name: Convert classes to DEX
       run: |
         mkdir -p dex_output
-        java -jar tools/d8.jar --min-api 21 --output=dex_output bin/**/*.class
+        d8 --min-api 21 --output=dex_output bin/**/*.class
 
+    # 6️⃣ Upload do classes.dex
     - name: Upload classes.dex
       uses: actions/upload-artifact@v4
       with:
