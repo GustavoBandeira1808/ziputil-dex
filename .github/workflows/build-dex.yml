@@ -32,11 +32,11 @@ jobs:
           find . -name "*.java" > sources.txt
           javac -source 1.8 -target 1.8 -d bin @sources.txt
 
-      # 5️⃣ Converter .class para .dex usando d8
+      # 5️⃣ Converter .class para .dex usando d8 (shell expansion)
       - name: Convert classes to DEX
         run: |
           mkdir -p dex_output
-          ./tools/d8 --min-api 21 --output=dex_output bin/**/*.class
+          find bin -name "*.class" | xargs ./tools/d8 --min-api 21 --output=dex_output
 
       # 6️⃣ Upload do classes.dex como artefato
       - name: Upload classes.dex
