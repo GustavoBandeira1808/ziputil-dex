@@ -10,41 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1️⃣ Checkout do código
     - name: Checkout repo
       uses: actions/checkout@v3
 
+    # 2️⃣ Instalar Java 8
     - name: Set up Java 8
       uses: actions/setup-java@v3
       with:
         java-version: '8'
         distribution: 'temurin'
 
+    # 3️⃣ Compilar todos os arquivos .java
     - name: Compile all Java files
       run: |
         mkdir -p bin
         find . -name "*.java" > sources.txt
         javac -source 1.8 -target 1.8 -d bin @sources.txt
 
-    - name: Install Android SDK Command Line Tools
+    # 4️⃣ Baixar build-tools e pegar d8.jar
+    - name: Download Android build-tools and extract d8.jar
       run: |
-        sudo apt update
-        sudo apt install -y wget unzip openjdk-8-jdk
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        cd $HOME/android-sdk
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip -q cmdline-tools.zip -d cmdline-tools
-        rm cmdline-tools.zip
-        mkdir -p cmdline-tools/latest
-        mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/
-        yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "build-tools;33.0.2"
-        export PATH=$HOME/android-sdk/build-tools/33.0.2:$PATH
-        d8 --version
+        mkdir -p tools
+        wget https://dl.google.com/android/repository/build-tools_r33.0.2-linux.zip -O build-tools.zip
+        unzip -q build-tools.zip
+        cp build-tools/33.0.2/lib/d8.jar tools/
+        rm -rf build-tools build-tools.zip
 
+    # 5️⃣ Converter .class para .dex usando d8.jar
     - name: Convert classes to DEX
       run: |
         mkdir -p dex_output
-        d8 --min-api 21 --output=dex_output bin/**/*.class
+        java -jar tools/d8.jar --min-api 21 --output=dex_output bin/**/*.class
 
+    # 6️⃣ Upload do classes.dex
     - name: Upload classes.dex
       uses: actions/upload-artifact@v4
       with:
