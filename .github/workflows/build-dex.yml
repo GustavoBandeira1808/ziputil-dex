@@ -42,7 +42,7 @@ jobs:
         d8 --min-api 21 --output=./dex_output ZipUtil.class
 
     - name: Upload classes.dex
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ziputil-dex
         path: ./dex_output/classes.dex
